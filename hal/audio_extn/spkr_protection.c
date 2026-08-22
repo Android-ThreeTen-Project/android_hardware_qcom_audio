@@ -205,6 +205,7 @@ static int get_spkr_prot_cal(int cal_fd,
         goto done;
     }
 
+    memset(&cal_data, 0, sizeof(cal_data));
     cal_data.hdr.data_size = sizeof(cal_data);
     cal_data.hdr.version = VERSION_0_0;
     cal_data.hdr.cal_type = AFE_FB_SPKR_PROT_CAL_TYPE;
@@ -219,7 +220,8 @@ static int get_spkr_prot_cal(int cal_fd,
         goto done;
     }
 
-    status->r0 = cal_data.cal_type.cal_info.r0;
+    status->r0[SP_V2_SPKR_1] =
+            cal_data.cal_type.cal_info.r0[SP_V2_SPKR_1];
     status->status = cal_data.cal_type.cal_info.status;
 done:
     return ret;
@@ -243,13 +245,16 @@ static int set_spkr_prot_cal(int cal_fd,
         goto done;
     }
 
+    memset(&cal_data, 0, sizeof(cal_data));
     cal_data.hdr.data_size = sizeof(cal_data);
     cal_data.hdr.version = VERSION_0_0;
     cal_data.hdr.cal_type = AFE_FB_SPKR_PROT_CAL_TYPE;
     cal_data.hdr.cal_type_size = sizeof(cal_data.cal_type);
     cal_data.cal_type.cal_hdr.version = VERSION_0_0;
-    cal_data.cal_type.cal_info.r0 = protCfg->r0;
-    cal_data.cal_type.cal_info.t0 = protCfg->t0;
+    cal_data.cal_type.cal_info.r0[SP_V2_SPKR_1] =
+            protCfg->r0[SP_V2_SPKR_1];
+    cal_data.cal_type.cal_info.t0[SP_V2_SPKR_1] =
+            protCfg->t0[SP_V2_SPKR_1];
     cal_data.cal_type.cal_info.mode = protCfg->mode;
     cal_data.cal_type.cal_data.mem_handle = -1;
 
@@ -274,7 +279,8 @@ static int spkr_calibrate(int t0)
     int32_t pcm_dev_rx_id = -1, pcm_dev_tx_id = -1;
     struct timespec ts;
 
-    status.status = 0;
+    memset(&protCfg, 0, sizeof(protCfg));
+    memset(&status, 0, sizeof(status));
     if (!adev) {
         ALOGE("%s: Invalid params", __func__);
         return -EINVAL;
@@ -289,7 +295,7 @@ static int spkr_calibrate(int t0)
         return -ENODEV;
     } else {
         protCfg.mode = MSM_SPKR_PROT_CALIBRATION_IN_PROGRESS;
-        protCfg.t0 = t0;
+        protCfg.t0[SP_V2_SPKR_1] = t0;
         if (set_spkr_prot_cal(acdb_fd, &protCfg)) {
             ALOGE("%s: spkr_prot_thread set failed AUDIO_SET_SPEAKER_PROT",
             __func__);
@@ -382,7 +388,7 @@ static int spkr_calibrate(int t0)
             /*sleep for 200 ms to check for status check*/
             if (!status.status) {
                 ALOGD("%s: spkr_prot_thread calib Success R0 %d",
-                 __func__, status.r0);
+                 __func__, status.r0[SP_V2_SPKR_1]);
                 FILE *fp;
                 fp = fopen(CALIB_FILE,"wb");
                 if (!fp) {
@@ -390,8 +396,10 @@ static int spkr_calibrate(int t0)
                     __func__, strerror(errno));
                     status.status = -ENODEV;
                 } else {
-                    fwrite(&status.r0, sizeof(status.r0),1,fp);
-                    fwrite(&protCfg.t0, sizeof(protCfg.t0),1,fp);
+                    fwrite(&status.r0[SP_V2_SPKR_1],
+                           sizeof(status.r0[SP_V2_SPKR_1]), 1, fp);
+                    fwrite(&protCfg.t0[SP_V2_SPKR_1],
+                           sizeof(protCfg.t0[SP_V2_SPKR_1]), 1, fp);
                     fclose(fp);
                 }
                 break;
@@ -424,7 +432,7 @@ exit:
 
         if (!status.status) {
             protCfg.mode = MSM_SPKR_PROT_CALIBRATED;
-            protCfg.r0 = status.r0;
+            protCfg.r0[SP_V2_SPKR_1] = status.r0[SP_V2_SPKR_1];
             if (set_spkr_prot_cal(acdb_fd, &protCfg))
                 ALOGE("%s: spkr_prot_thread disable calib mode", __func__);
             else
@@ -459,6 +467,7 @@ static void* spkr_calibration_thread()
     int acdb_fd;
     struct audio_device *adev = handle.adev_handle;
 
+    memset(&protCfg, 0, sizeof(protCfg));
     handle.speaker_prot_threadid = pthread_self();
     ALOGD("spkr_prot_thread enable prot Entry");
     acdb_fd = open("/dev/msm_audio_cal",O_RDWR | O_NONBLOCK);
@@ -483,17 +492,21 @@ static void* spkr_calibration_thread()
 
     fp = fopen(CALIB_FILE,"rb");
     if (fp) {
-        fread(&protCfg.r0,sizeof(protCfg.r0),1,fp);
-        ALOGD("%s: spkr_prot_thread r0 value %d", __func__, protCfg.r0);
-        fread(&protCfg.t0, sizeof(protCfg.t0), 1, fp);
-        ALOGD("%s: spkr_prot_thread t0 value %d", __func__, protCfg.t0);
+        fread(&protCfg.r0[SP_V2_SPKR_1],
+              sizeof(protCfg.r0[SP_V2_SPKR_1]), 1, fp);
+        ALOGD("%s: spkr_prot_thread r0 value %d", __func__,
+              protCfg.r0[SP_V2_SPKR_1]);
+        fread(&protCfg.t0[SP_V2_SPKR_1],
+              sizeof(protCfg.t0[SP_V2_SPKR_1]), 1, fp);
+        ALOGD("%s: spkr_prot_thread t0 value %d", __func__,
+              protCfg.t0[SP_V2_SPKR_1]);
         fclose(fp);
         /*Valid tempature range: -30C to 80C(in q6 format)
           Valid Resistance range: 2 ohms to 40 ohms(in q24 format)*/
-        if (protCfg.t0 > MIN_SPKR_TEMP_Q6 &&
-            protCfg.t0 < MAX_SPKR_TEMP_Q6 &&
-            protCfg.r0 >= MIN_RESISTANCE_SPKR_Q24
-            && protCfg.r0 < MAX_RESISTANCE_SPKR_Q24) {
+        if (protCfg.t0[SP_V2_SPKR_1] > MIN_SPKR_TEMP_Q6 &&
+            protCfg.t0[SP_V2_SPKR_1] < MAX_SPKR_TEMP_Q6 &&
+            protCfg.r0[SP_V2_SPKR_1] >= MIN_RESISTANCE_SPKR_Q24 &&
+            protCfg.r0[SP_V2_SPKR_1] < MAX_RESISTANCE_SPKR_Q24) {
             ALOGD("%s: Spkr calibrated", __func__);
             protCfg.mode = MSM_SPKR_PROT_CALIBRATED;
             if (set_spkr_prot_cal(acdb_fd, &protCfg)) {
