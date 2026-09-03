@@ -117,7 +117,7 @@ struct audio_block_header
 };
 
 /* Audio calibration related functions */
-typedef void (*acdb_deallocate_t)();
+typedef void (*acdb_deallocate_t)(void);
 typedef int  (*acdb_init_t)(char *, char *, int);
 typedef void (*acdb_send_audio_cal_t)(int, int, int, int);
 typedef void (*acdb_send_voice_cal_t)(int, int);

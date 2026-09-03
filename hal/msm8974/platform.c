@@ -157,7 +157,7 @@ typedef struct acdb_audio_cal_cfg {
 } acdb_audio_cal_cfg_t;
 
 /* Audio calibration related functions */
-typedef void (*acdb_deallocate_t)();
+typedef void (*acdb_deallocate_t)(void);
 typedef int  (*acdb_init_t)(const char *, char *, int);
 typedef void (*acdb_send_audio_cal_t)(int, int, int , int);
 typedef void (*acdb_send_voice_cal_t)(int, int);
