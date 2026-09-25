@@ -3851,7 +3851,6 @@ static void adev_snd_mon_cb(void *cookie, struct str_parms *parms)
     if (card == adev->snd_card || is_ext_device_status) {
         if (is_snd_card_status && adev->card_status != status) {
             adev->card_status = status;
-            platform_snd_card_update(adev->platform, status);
             audio_extn_fm_set_parameters(adev, parms);
         } else if (is_ext_device_status) {
             platform_set_parameters(adev->platform, parms);
