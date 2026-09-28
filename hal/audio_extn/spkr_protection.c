@@ -525,7 +525,7 @@ exit:
     return status.status;
 }
 
-static void* spkr_calibration_thread()
+static void* spkr_calibration_thread(void *arg)
 {
     unsigned long sec = 0;
     int t0;
@@ -536,6 +536,8 @@ static void* spkr_calibration_thread()
     struct audio_device *adev = handle.adev_handle;
     unsigned long min_idle_time = MIN_SPKR_IDLE_SEC;
     char value[PROPERTY_VALUE_MAX];
+
+    (void)arg;
 
     /* If the value of this persist.spkr.cal.duration is 0
      * then it means it will take 30min to calibrate
