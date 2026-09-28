@@ -457,7 +457,7 @@ exit:
     return status.status;
 }
 
-static void* spkr_calibration_thread()
+static void* spkr_calibration_thread(void *arg)
 {
     unsigned long sec = 0;
     int t0;
@@ -466,6 +466,8 @@ static void* spkr_calibration_thread()
     FILE *fp;
     int acdb_fd;
     struct audio_device *adev = handle.adev_handle;
+
+    (void)arg;
 
     memset(&protCfg, 0, sizeof(protCfg));
     handle.speaker_prot_threadid = pthread_self();
